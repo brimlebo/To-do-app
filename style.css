@@ -1,0 +1,77 @@
+body {
+	font-family: Times new roman;
+    text-align: center;
+    background: lightblue
+    /* animation-name: A_wainbow;
+	animation-duration: 6s;
+	animation-iteration-count:infinite; */
+}
+
+/* Some old stuff from high school that i wanted to test again
+@-webkit-keyframes A_wainbow {
+  0% {
+    background: orange;
+  }
+
+  20% {
+    background: yellow;
+  }
+
+  40% {
+    background: lightgreen;
+  }
+
+  60% {
+    background: cyan;
+  }
+
+  80% {
+    background: lightblue;
+  }
+  100% {
+    background: orange;
+  }
+}
+*/
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+button {
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.task {
+    background: #436cce;
+    padding: 10px;
+    margin: 5px;
+    border-radius: 5px;
+    cursor: grab;
+}
+
+.task:active {
+    cursor: grabbing;
+    opacity: 0.5;
+}
+
+.task.dragging {
+    opacity: 0.5;
+}
+
+.subtask-list {
+    margin-left: 20px;
+    padding-left: 10px;
+}
+
+.container {
+    width: 500px;
+    margin: 50px auto;
+}
+
+.delete-task:disabled {
+    background-color: grey;
+    cursor: not-allowed;
+}
