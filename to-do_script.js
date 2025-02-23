@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const addTaskButton = document.getElementById("addTaskButton");
     const taskList = document.getElementById("taskList");
 
+    let tasks = []      // Store tasks in memory
     let draggedTask = null;
 
     // Load saved tasks from localStorage
@@ -10,24 +11,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
     addTaskButton.addEventListener("click", function () {
         const taskText = taskInput.value.trim();
-        if (taskText === "") return;
+        if (taskText === "") return;    // No input, don't do anything
 
-        const taskData = { text: taskText, subtasks: [] };
-        addTaskToDOM(taskData);
+        const task = { text: taskText, subtasks: [] };
+        tasks.push(task)
+        updateDOM();
         saveTasks();
 
         taskInput.value = "";
     });
 
-    function addTaskToDOM(taskData) {
+    // Bit of a blackbox function? Used throughout the page to update the DOM 
+    // when a change is made or after we load from localstorage
+    function updateDOM() {
+        taskList.innerHTML = "";    // Clear and repopulate the displayed list => Use signals to recalc changed parts?
+        tasks.forEach((task, index) => addTaskToDOM(task, index))
+    }
+
+    function addTaskToDOM(task, taskIndex) {
         const taskItem = document.createElement("li");
         taskItem.classList.add("task");
         taskItem.setAttribute("draggable", "true");
+        taskItem.dataset.index = taskIndex;
         taskItem.innerHTML = `
             <div class="task-header">
-                <span>${taskData.text}</span>
+                <span>${task.text}</span>
                 <button class="add-subtask">Add subtask</button>
-                <button class="delete-task" disabled>Delete</button>
+                <button class="delete-task" ${task.subtasks.length > 0 ? "disabled" : ""}>Delete</button>
             </div>
             <ul class="subtask-list"></ul>
         `;
@@ -43,24 +53,26 @@ document.addEventListener("DOMContentLoaded", function () {
             const subtaskText = prompt("Enter subtask:");
             if (!subtaskText) return;
 
-            const subtaskData = { text: subtaskText, completed: false };
-            addSubtaskToDOM(subtaskList, subtaskData);
-            updateDeleteButtonState(taskItem);
+            tasks[taskIndex].subtasks.push({ text: subtaskText, completed: false });
+            updateDOM();
             saveTasks();
         });
 
         deleteTaskButton.addEventListener("click", function () {
-            taskItem.remove();
+            tasks.splice(taskIndex, 1);
+            updateDOM();
             saveTasks();
         });
 
-        // Load existing subtasks
-        taskData.subtasks.forEach(subtask => addSubtaskToDOM(subtaskList, subtask));
+        // Add/Load all existing subtasks
+        task.subtasks.forEach((subtask, subtaskIndex) => addSubtaskToDOM(subtaskList, taskIndex, subtaskIndex));
 
-        updateDeleteButtonState(taskItem);
+        updateDeleteButtonState(taskItem, taskIndex);
     }
 
-    function addSubtaskToDOM(subtaskList, subtaskData) {
+    function addSubtaskToDOM(subtaskList, taskIndex, subtaskIndex) {
+        const subtaskData = tasks[taskIndex].subtasks[subtaskIndex];
+
         const subtaskItem = document.createElement("li");
         subtaskItem.innerHTML = `
             <input type="checkbox" ${subtaskData.completed ? "checked" : ""}>
@@ -73,49 +85,35 @@ document.addEventListener("DOMContentLoaded", function () {
         const checkbox = subtaskItem.querySelector("input");
 
         deleteSubtaskButton.addEventListener("click", function () {
-            subtaskItem.remove();
-            updateDeleteButtonState(subtaskList.closest(".task"));
+            tasks[taskIndex].subtasks.splice(subtaskIndex, 1);
+            updateDOM();
             saveTasks();
         });
 
         checkbox.addEventListener("change", function () {
-            updateDeleteButtonState(subtaskList.closest(".task"));
+            tasks[taskIndex].subtasks[subtaskIndex].completed = checkbox.checked;
+            updateDeleteButtonState(subtaskList.closest(".task"), taskIndex);
             saveTasks();
         });
     }
 
-    function updateDeleteButtonState(taskItem) {
-        const subtaskList = taskItem.querySelector(".subtask-list");
+    function updateDeleteButtonState(taskItem, taskIndex) {
         const deleteTaskButton = taskItem.querySelector(".delete-task");
+        const subtasks = tasks[taskIndex].subtasks;
+        const completedSubtasks = subtasks.filter(sub => sub.completed).length;
 
-        const subtasks = subtaskList.querySelectorAll("li");
-        const completedSubtasks = subtaskList.querySelectorAll("input:checked");
-
-        deleteTaskButton.disabled = subtasks.length > 0 && completedSubtasks.length !== subtasks.length;
+        deleteTaskButton.disabled = subtasks.length > 0 && completedSubtasks !== subtasks.length;
     }
 
+    // Changed to just save the stored tasks, no need to get all the tasks from the DOM
     function saveTasks() {
-        const tasks = [];
-        document.querySelectorAll(".task").forEach(taskItem => {
-            const taskText = taskItem.querySelector(".task-header span").innerText;
-            const subtasks = [];
-
-            taskItem.querySelectorAll(".subtask-list li").forEach(subtaskItem => {
-                subtasks.push({
-                    text: subtaskItem.querySelector("span").innerText,
-                    completed: subtaskItem.querySelector("input").checked
-                });
-            });
-
-            tasks.push({ text: taskText, subtasks });
-        });
-
         localStorage.setItem("tasks", JSON.stringify(tasks));
     }
 
+    // Get stored tasks, toss them in the tasks object and use it to update DOM
     function loadTasks() {
-        const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-        savedTasks.forEach(taskData => addTaskToDOM(taskData));
+        tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        updateDOM();
     }
 
     function addDragAndDrop(taskItem) {
@@ -132,13 +130,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
         taskItem.addEventListener("dragover", function (e) {
             e.preventDefault();
-            const bounding = this.getBoundingClientRect();
-            const offset = e.clientY - bounding.top;
-            if (offset > bounding.height / 2) {
-                this.parentNode.insertBefore(draggedTask, this.nextSibling);
-            } else {
-                this.parentNode.insertBefore(draggedTask, this);
-            }
+            const target = e.target.closest(".task");
+            if (!target || target === draggedTask) return;
+
+            const draggedIndex = Number(draggedTask.dataset.index);
+            const targetIndex = Number(target.dataset.index);
+
+            // Swap tasks in the array
+            const temp = tasks[draggedIndex];
+            tasks.splice(draggedIndex, 1);
+            tasks.splice(targetIndex, 0, temp);
+
+            updateDOM();
+            saveTasks();
         });
     }
 });
