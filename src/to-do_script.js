@@ -1,20 +1,21 @@
+import { Signal } from "signal-polyfill"
+
 document.addEventListener("DOMContentLoaded", function () {
     const taskInput = document.getElementById("taskInput");
     const addTaskButton = document.getElementById("addTaskButton");
     const taskList = document.getElementById("taskList");
 
-    let tasks = []      // Store tasks in memory
-    let draggedTask = null;
+    const tasks = new Signal.State(JSON.parse(localStorage.getItem("tasks")) || [])
+    updateDOM();
 
-    // Load saved tasks from localStorage
-    loadTasks();
+    let draggedTask = null;
 
     addTaskButton.addEventListener("click", function () {
         const taskText = taskInput.value.trim();
         if (taskText === "") return;    // No input, don't do anything
 
         const task = { text: taskText, subtasks: [] };
-        tasks.push(task)
+        tasks.get().push(task)
         updateDOM();
         saveTasks();
 
@@ -25,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // when a change is made or after we load from localstorage
     function updateDOM() {
         taskList.innerHTML = "";    // Clear and repopulate the displayed list => Use signals to recalc changed parts?
-        tasks.forEach((task, subtasks) => addTaskToDOM(task, subtasks))
+        tasks.get().forEach((task, subtasks) => addTaskToDOM(task, subtasks))
     }
 
     function addTaskToDOM(task, taskIndex) {
@@ -53,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const subtaskText = prompt("Enter subtask:");
             if (!subtaskText) return;
 
-            tasks[taskIndex].subtasks.push({ text: subtaskText, completed: false });
+            tasks.get()[taskIndex].subtasks.push({ text: subtaskText, completed: false });
             updateDOM();
             saveTasks();
         });
@@ -71,7 +72,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function addSubtaskToDOM(subtaskList, taskIndex, subtaskIndex) {
-        const subtaskData = tasks[taskIndex].subtasks[subtaskIndex];
+        const subtaskData = tasks.get()[taskIndex].subtasks[subtaskIndex];
 
         const subtaskItem = document.createElement("li");
         subtaskItem.innerHTML = `
@@ -85,13 +86,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const checkbox = subtaskItem.querySelector("input");
 
         deleteSubtaskButton.addEventListener("click", function () {
-            tasks[taskIndex].subtasks.splice(subtaskIndex, 1);
+            tasks.get()[taskIndex].subtasks.splice(subtaskIndex, 1);
             updateDOM();
             saveTasks();
         });
 
         checkbox.addEventListener("change", function () {
-            tasks[taskIndex].subtasks[subtaskIndex].completed = checkbox.checked;
+            tasks.get()[taskIndex].subtasks[subtaskIndex].completed = checkbox.checked;
             updateDeleteButtonState(subtaskList.closest(".task"), taskIndex);
             saveTasks();
         });
@@ -99,7 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateDeleteButtonState(taskItem, taskIndex) {
         const deleteTaskButton = taskItem.querySelector(".delete-task");
-        const subtasks = tasks[taskIndex].subtasks;
+        const subtasks = tasks.get()[taskIndex].subtasks;
         const completedSubtasks = subtasks.filter(sub => sub.completed).length;
 
         deleteTaskButton.disabled = subtasks.length > 0 && completedSubtasks !== subtasks.length;
@@ -107,13 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Changed to just save the stored tasks, no need to get all the tasks from the DOM
     function saveTasks() {
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-    }
-
-    // Get stored tasks, toss them in the tasks object and use it to update DOM
-    function loadTasks() {
-        tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-        updateDOM();
+        localStorage.setItem("tasks", JSON.stringify(tasks.get()));
     }
 
     function addDragAndDrop(taskItem) {
@@ -137,9 +132,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const targetIndex = Number(target.dataset.index);
 
             // Swap tasks in the array
-            const temp = tasks[draggedIndex];
-            tasks.splice(draggedIndex, 1);
-            tasks.splice(targetIndex, 0, temp);
+            const temp = tasks.get()[draggedIndex];
+            tasks.get().splice(draggedIndex, 1);
+            tasks.get().splice(targetIndex, 0, temp);
 
             updateDOM();
             saveTasks();
