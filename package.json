@@ -1,22 +1,6 @@
 {
-  "name": "to-do-site",
-  "version": "1.0.0",
-  "main": "to-do_script.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/brimlebo/To-do-app.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/brimlebo/To-do-app/issues"
-  },
-  "homepage": "https://github.com/brimlebo/To-do-app#readme",
-  "description": "",
   "dependencies": {
-    "signal-polyfill": "^0.2.2"
+    "signal-polyfill": "^0.2.2",
+    "vite": "^6.1.1"
   }
 }
