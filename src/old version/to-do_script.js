@@ -22,8 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
         taskInput.value = "";
     });
 
-    // Bit of a blackbox function? Used throughout the page to update the DOM 
-    // when a change is made or after we load from localstorage
+    // Bit of a blackbox function? Used throughout the page to update the DOM when a change is made
     function updateDOM() {
         taskList.innerHTML = "";    // Clear and repopulate the displayed list => Use signals to recalc changed parts?
         tasks.get().forEach((task, subtasks) => addTaskToDOM(task, subtasks))
@@ -36,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
         taskItem.dataset.index = taskIndex;
         taskItem.innerHTML = `
             <div class="task-header">
-                <span>${task.text}</span>
+                <span class="task-text">${task.text}</span>
                 <button class="add-subtask">Add subtask</button>
                 <button class="delete-task" ${task.subtasks.length > 0 ? "disabled" : ""}>Delete</button>
             </div>
@@ -60,7 +59,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         deleteTaskButton.addEventListener("click", function () {
-            tasks.splice(taskIndex, 1);
+            tasks.get().splice(taskIndex, 1);
             updateDOM();
             saveTasks();
         });
