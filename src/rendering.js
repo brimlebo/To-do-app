@@ -7,7 +7,7 @@ export function renderTask(task, container) {
 
     taskItem.innerHTML = `
         <div class="task-header">
-            <span class="task-text"></span>
+            <span class="task-text">${task.text.get()}</span>
             <button class="add-subtask">Add subtask</button>
             <button class="delete-task">Delete</button>
         </div>
@@ -27,7 +27,7 @@ export function renderTask(task, container) {
 
     const subtaskList = taskItem.querySelector(".subtask-list");
     effect(() => {
-        renderSubtasks(task.subtasks.get(), subtaskList)
+        renderSubtasks(task.subtasks, subtaskList)
     });
 
     container.appendChild(taskItem)
@@ -35,40 +35,33 @@ export function renderTask(task, container) {
 }
 
 function renderSubtasks(subtasks, container) {
-    const currentIds = new Set(subtasks.map(subtask => subtask.id));
+    const currentIds = new Set(subtasks.get().map(subtask => subtask.id));
     const existing = Array.from(container.children);
 
     existing.forEach(item => {
         if (!currentIds.has(item.dataset.id)) {
-            item._effects?.forEach(fn => fn());
             item.remove();
         }
     });
 
-    subtasks.forEach(subtask => {
+    subtasks.get().forEach(subtask => {
         let item = container.querySelector(`[data-id="${subtask.id}"]`);
         if (!item) {
             item = document.createElement('li');
             item.dataset.id = subtask.id;
             item.innerHTML = `
-                <input type="checkbox">
-                <span class="subtask-text"></span>
+                <input type="checkbox" ${subtask.completed.get() ? "checked" : ""}>
+                <span class="subtask-text">${subtask.text}</span>
                 <button class="delete-subtask">Delete</button>
             `;
-            
-            // Add effects for reactivity
-            item._effects = [
-                effect(() => {
-                    item.querySelector('.subtask-text').textContent = subtask.text.get();
-                }),
-                effect(() => {
-                    item.querySelector('input').checked = subtask.completed.get();
-                })
-            ];
             
             // Add event handlers
             item.querySelector('input').addEventListener('change', () => {
                 subtask.completed.set(!subtask.completed.get());
+            });
+
+            item.querySelector('.delete-subtask').addEventListener('click', () => {
+                subtasks.set(subtasks.get().filter(s => s.id !== subtask.id));
             });
             
             container.appendChild(item);

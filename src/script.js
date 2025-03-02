@@ -11,7 +11,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let dragStartIndex = null;
 
-    localStorage.clear()
+    // For tetsing and resetting current storage
+    /* localStorage.clear() */
 
     const getTasks = JSON.parse(localStorage.getItem("tasks")) || []
 
@@ -21,14 +22,22 @@ document.addEventListener("DOMContentLoaded", function () {
         const currentTasks = tasks.get();
         /* console.log(currentTasks) */
 
-        localStorage.setItem("tasks", JSON.stringify(tasks.get()));
+        localStorage.setItem("tasks", JSON.stringify(tasks.get().map(task => ({
+            id: task.id,
+            text: task.text.get(),
+            subtasks: task.subtasks.get().map(subtask => ({
+                id: subtask.id,
+                text: subtask.text,
+                completed: subtask.completed.get()
+            }))
+        }))));
 
         const currentIds = new Set(currentTasks.map(t => t.id));
 
         // Remove deleted tasks
         Array.from(taskMap.keys()).forEach(taskId => {
             if (!currentIds.has(taskId)) {
-                taskMap.get(taskId).element.remove();
+                taskMap.get(taskId).taskItem.remove();
                 taskMap.delete(taskId);
             }
         });
@@ -72,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const currentElement = entry.taskItem;
             const correctPosition = index === 0 
                 ? taskList.firstChild 
-                : taskMap.get(currentTasks[index - 1].id).element.nextSibling;
+                : taskMap.get(currentTasks[index - 1].id).taskItem.nextSibling;
 
             if (currentElement !== correctPosition) {
                 taskList.insertBefore(currentElement, correctPosition);

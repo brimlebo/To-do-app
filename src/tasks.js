@@ -17,8 +17,11 @@ export function createTask(taskText) {
 // For redoing objects that have been taken from local-storage
 export function makeTask(taskId, taskText, subtasks) {
     const text = new Signal.State(taskText);
-    const taskSubtasks = new Signal.State(subtasks || []);
-    console.log(subtasks)
+    const taskSubtasks = new Signal.State(subtasks.map(subtask => ({
+        id: subtask.id,
+        text: subtask.text,
+        completed: new Signal.State(subtask.completed)
+    })));
 
     return {
         id: taskId,
@@ -31,11 +34,9 @@ export function makeTask(taskId, taskText, subtasks) {
 }
 
 export function createSubtask(subtaskText) {
-    const text = new Signal.State(subtaskText);
-
     return { 
         id: Date.now().toString(), 
-        text: text, 
+        text: subtaskText, 
         completed: new Signal.State(false) 
     };
 }
