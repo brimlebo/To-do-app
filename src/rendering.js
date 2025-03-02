@@ -3,7 +3,8 @@ import { effect } from "./effect";
 export function renderTask(task, container) {
     const taskItem = document.createElement("li");
     taskItem.classList.add("task");
-    taskItem.draggable = true;
+    taskItem.dataset.taskId = task.id;
+    taskItem.setAttribute("draggable", "true");
 
     taskItem.innerHTML = `
         <div class="task-header">

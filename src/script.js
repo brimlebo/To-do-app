@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const taskList = document.getElementById("taskList");
     const taskMap = new Map(); // Maps task IDs to DOM elements
 
-    let dragStartIndex = null;
+    let draggedTask = null;
 
     // For tetsing and resetting current storage
     /* localStorage.clear() */
@@ -66,14 +66,39 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
 
                 // Drag and drop handlers
-                entry.taskItem.addEventListener('dragstart', () => {
-                    entry.taskItem.classList.add('dragging');
-                    dragStartIndex = index;
+                entry.taskItem.addEventListener('dragstart', (e) => {
+                    draggedTask = entry.taskItem;
+                    draggedTask.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                entry.taskItem.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!draggedTask || draggedTask === entry.taskItem) return;
+
+                    const bounding = entry.taskItem.getBoundingClientRect();
+                    const offset = e.clientY - bounding.top;
+                    if (offset > bounding.height / 2) {
+                        taskList.insertBefore(draggedTask, entry.taskItem.nextSibling);
+                    } 
+                    else {
+                        taskList.insertBefore(draggedTask, entry.taskItem);
+                    }
                 });
 
                 entry.taskItem.addEventListener('dragend', () => {
-                    entry.taskItem.classList.remove('dragging');
-                    dragStartIndex = null;
+                    if (!draggedTask) return;
+                    
+                    draggedTask.classList.remove('dragging');
+
+                    const domOrder = Array.from(taskList.children)
+                        .map(task => task.dataset.taskId)   // Find all tasks in DOM
+                        .map(taskId => tasks.get().find(t => t.id === taskId))  // Check if task is supposed to be there
+                        .filter(t => t)     // Returns the order of tasks in the DOM
+
+                    tasks.set(domOrder)
+
+                    draggedTask = null
                 });
             }
 
